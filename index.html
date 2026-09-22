@@ -904,6 +904,42 @@
         .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
         html[data-theme="light"] .toast { box-shadow: var(--shadow-island); }
 
+        /* ---- PWA update toast ---- */
+        .update-toast {
+            position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom));
+            transform: translateX(-50%) translateY(10px);
+            display: flex; align-items: center; gap: 14px;
+            background: var(--surface); border: 1px solid var(--hairline);
+            border-radius: 999px;
+            padding: 8px 8px 8px 18px;
+            color: var(--text); font-family: var(--font-mono); font-size: 9px;
+            letter-spacing: 0.22em; text-transform: uppercase;
+            box-shadow: var(--shadow-island);
+            z-index: 6000;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s var(--ease-out), transform 0.5s var(--ease-spring);
+            white-space: nowrap;
+        }
+        .update-toast[hidden] { display: none; }
+        .update-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+        .update-toast-btn {
+            font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase;
+            padding: 8px 16px; border-radius: 999px;
+            background: var(--cyan); color: #04040a; font-weight: 700;
+            border: 0; cursor: pointer;
+            transition: filter 0.2s;
+        }
+        .update-toast-btn:hover { filter: brightness(1.1); }
+        .update-toast-btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+        .update-toast-x {
+            width: 28px; height: 28px;
+            display: grid; place-items: center;
+            background: transparent; border: 0; cursor: pointer;
+            color: var(--text-faint); font-size: 18px; line-height: 1;
+            border-radius: 999px;
+        }
+        .update-toast-x:hover { color: var(--text); background: var(--ctl-bg); }
+
         /* ---- Keyframes ---- */
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
@@ -1070,6 +1106,13 @@
 
     <!-- Toast -->
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <!-- PWA update toast (separate so it can include a button) -->
+    <div id="update-toast" class="update-toast" role="status" aria-live="polite" hidden>
+        <span>New version available</span>
+        <button id="update-reload" class="update-toast-btn" type="button">Reload</button>
+        <button id="update-dismiss" class="update-toast-x" type="button" aria-label="Dismiss">×</button>
+    </div>
 
     <!-- Floating island header (detached control deck) -->
     <header class="island">
@@ -3167,6 +3210,62 @@
 
             buildUI(); // rebuilds nav chips + cards reflecting restored active/section
         }
+
+        /* ---- PWA service worker registration + update toast ---- */
+        (function pwaRegister() {
+            if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
+            // Only register when serving from the production build path (sw.js exists)
+            // and on a secure origin (HTTPS or localhost). Production GH Pages qualifies.
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1' && location.hostname !== '0.0.0.0') return;
+
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/echo-manifold/sw.js', { scope: '/echo-manifold/' })
+                    .then((reg) => {
+                        const showUpdate = () => {
+                            const t = document.getElementById('update-toast');
+                            if (!t) return;
+                            t.hidden = false;
+                            requestAnimationFrame(() => t.classList.add('show'));
+                        };
+                        const dismissUpdate = () => {
+                            const t = document.getElementById('update-toast');
+                            if (!t) return;
+                            t.classList.remove('show');
+                            setTimeout(() => { t.hidden = true; }, 400);
+                        };
+                        const reloadUpdate = () => {
+                            if (!navigator.serviceWorker.controller) {
+                                // First install — just hide the toast, controller will activate
+                                dismissUpdate();
+                                return;
+                            }
+                            reg.waiting && reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                        };
+
+                        document.getElementById('update-reload')?.addEventListener('click', reloadUpdate);
+                        document.getElementById('update-dismiss')?.addEventListener('click', dismissUpdate);
+
+                        // Listen for new SW waiting
+                        if (reg.waiting) showUpdate();
+                        reg.addEventListener('updatefound', () => {
+                            const sw = reg.installing;
+                            if (!sw) return;
+                            sw.addEventListener('statechange', () => {
+                                if (sw.state === 'installed' && navigator.serviceWorker.controller) showUpdate();
+                            });
+                        });
+
+                        // Periodic background check (every 60 min)
+                        setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000);
+
+                        navigator.serviceWorker.addEventListener('controllerchange', () => {
+                            // New SW took over — reload to pick up fresh assets
+                            location.reload();
+                        });
+                    })
+                    .catch((err) => console.warn('SW registration failed:', err));
+            });
+        })();
 
         /* ---- Load initial state: URL > localStorage ---- */
         (function loadInitialState() {

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "ECHO \u00b7 Harmonic Manifold 5.0 \u2014 standalone generative audio engine. 30 formulas across 9 sections, 5 generative modes (Eno/Euclid/Chaos/Phi/Cellular). WebAudio only, no media library.",
+  "description": "ECHO · Harmonic Manifold 5.0 — standalone generative audio engine. 30 formulas across 9 sections, 5 generative modes (Eno/Euclid/Chaos/Phi/Cellular). WebAudio only, no media library.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -15,6 +15,8 @@
   "devDependencies": {
     "@fontsource-variable/geist": "^5.3.0",
     "@fontsource-variable/geist-mono": "^5.3.0",
-    "vite": "^5.4.10"
+    "sharp": "^0.35.4",
+    "vite": "^5.4.10",
+    "vite-plugin-pwa": "^1.3.0"
   }
 }
