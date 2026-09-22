@@ -3,6 +3,10 @@
 A standalone generative audio engine. WebAudio only — no media library, no
 audio file, no microphone. The browser generates everything in real time.
 
+Designed **mobile-first**: the control deck is a floating glass island, the
+macro field (all 5 sliders + global tune) lives in a collapsible bottom dock
+on phones, and the layout stacks cleanly from 320px up to desktop.
+
 ## What it does
 
 - **30 formulas** across 9 sections (Spacetime, Cosmic Scale, Genesis,
@@ -16,6 +20,22 @@ audio file, no microphone. The browser generates everything in real time.
   - **▦ Cellular** — evolving arpeggios using Rule 30 automata
 - **Per-frame visualizer** that maps the active formula to a Canvas 2D
   shape (black hole, DNA helix, torus, cymatics, chaos attractor, etc.)
+
+## Design system
+
+- **Self-hosted type** — Geist Variable + Geist Mono (OFL) served from
+  `public/fonts/`, no runtime CDN (per the no-runtime-CDN constraint).
+- **Ethereal glass** language: OLED blacks, hairline borders, double-bezel
+  (nested shell + core) cards, ambient orb field + film grain.
+- **Motion** — custom cubic-bezier springs, staggered entry reveals,
+  magnetic button physics; `prefers-reduced-motion` disables drift and
+  freezes the visualizer.
+- **Mobile-first layout** — floating island header (detached, not
+  edge-to-edge), mobile-only **Studio dock** (macro sliders + tune,
+  collapsible, safe-area aware), horizontal section chips, `100dvh` shell.
+- **Accessibility** — real `<label>`s on all sliders, keyboard-operable
+  formula cards, labeled icon buttons, focus-managed dialog, live regions
+  for title/description, contrast-checked tokens.
 
 ## Run locally
 
@@ -33,8 +53,10 @@ npm run preview  # http://localhost:4173
 
 ## Deploy
 
-The repo is wired for Vercel. Push to `main` and Vercel builds + deploys
-automatically (assuming the GitHub integration is connected).
+Deployed to **GitHub Pages** via GitHub Actions (`.github/workflows/deploy.yml`).
+Push to `main` and the site rebuilds + publishes automatically:
+
+<https://kajica2.github.io/echo-manifold/>
 
 ## Controls
 
@@ -60,8 +82,9 @@ Verbatim port of a Gemini Canvas artifact titled "Harmonic Manifold 5.0
 
 Math + audio synthesis + visualizer branches ported as-is. The CDN
 dependencies in the original (Tailwind script + Google Fonts) were
-inlined as static CSS with system fonts, per the no-runtime-CDN constraint
-of the parent project (Sainted Word Records / SWR engine).
+inlined as static CSS with self-hosted fonts (Geist / Geist Mono), per the
+no-runtime-CDN constraint of the parent project (Sainted Word Records / SWR
+engine).
 
 ## License
 
