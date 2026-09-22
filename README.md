@@ -33,9 +33,14 @@ on phones, and the layout stacks cleanly from 320px up to desktop.
 - **Mobile-first layout** — floating island header (detached, not
   edge-to-edge), mobile-only **Studio dock** (macro sliders + tune,
   collapsible, safe-area aware), horizontal section chips, `100dvh` shell.
+- **Light / dark themes** — `data-theme` token system; toggle in the island
+  header (sun/moon), persisted to `localStorage`, honors system preference
+  when unset, no theme-flash (inline head bootstrap). The visualizer stage
+  and waveform strip stay dark in both themes — glow synthesis doesn't
+  survive on white — framed as a deliberate "dark portal."
 - **Accessibility** — real `<label>`s on all sliders, keyboard-operable
   formula cards, labeled icon buttons, focus-managed dialog, live regions
-  for title/description, contrast-checked tokens.
+  for title/description, contrast-checked tokens in both themes.
 
 ## Run locally
 
