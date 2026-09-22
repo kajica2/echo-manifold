@@ -1954,6 +1954,66 @@
 
         const audio = new ManifoldAudio();
 
+        /* ---- 1s formula preview layer ---- */
+        let previewGain = null;
+        let previewActive = null; // { osc, gain, endsAt }
+        let previewFadeOutTimer = null;
+
+        function ensurePreviewBus() {
+            if (previewGain || !audio.ctx || !audio.master) return previewGain;
+            previewGain = audio.ctx.createGain();
+            previewGain.gain.value = 0.32;
+            previewGain.connect(audio.master);
+            return previewGain;
+        }
+
+        function stopActivePreview() {
+            if (!previewActive) return;
+            try { previewActive.osc.stop(); } catch (e) {}
+            previewActive = null;
+            if (previewFadeOutTimer) { clearTimeout(previewFadeOutTimer); previewFadeOutTimer = null; }
+        }
+
+        function previewFormula(f) {
+            if (!audio.ctx || !audio.master || !f) return;
+            const bus = ensurePreviewBus();
+            if (!bus) return;
+
+            stopActivePreview();
+
+            const ctx = audio.ctx;
+            const now = ctx.currentTime;
+            const freq = (f.freq || 432) * Math.pow(2, (state.tuning || 0) / 12);
+
+            const osc = ctx.createOscillator();
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+
+            // Type-based tonal flavor: slight detune + secondary oscillator for richer formulas
+            const flavor = (f.fm || 1) * 0.6;
+            if (flavor > 0.5) {
+                osc.detune.linearRampToValueAtTime(flavor * 8, now + 0.5);
+            }
+
+            const oscGain = ctx.createGain();
+            oscGain.gain.setValueAtTime(0, now);
+            oscGain.gain.linearRampToValueAtTime(1, now + 0.04);
+            oscGain.gain.setValueAtTime(1, now + 0.78);
+            oscGain.gain.linearRampToValueAtTime(0, now + 1.0);
+
+            osc.connect(oscGain);
+            oscGain.connect(bus);
+
+            osc.start(now);
+            osc.stop(now + 1.05);
+
+            previewActive = { osc, gain: oscGain, endsAt: now + 1.05 };
+            previewFadeOutTimer = setTimeout(() => {
+                previewFadeOutTimer = null;
+                previewActive = null;
+            }, 1100);
+        }
+
         const mainCanvas = document.getElementById('main-canvas');
         const mainCtx = mainCanvas.getContext('2d');
         const waveCanvas = document.getElementById('wave-canvas');
@@ -2388,6 +2448,22 @@
                         e.preventDefault();
                         activate(f);
                     }
+                });
+                // Formula preview — 350ms hover delay (mouse), instant on keyboard focus
+                let hoverTimer = null;
+                card.addEventListener('mouseenter', () => {
+                    if (hoverTimer) clearTimeout(hoverTimer);
+                    hoverTimer = setTimeout(() => { hoverTimer = null; previewFormula(f); }, 350);
+                });
+                card.addEventListener('mouseleave', () => {
+                    if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null; }
+                });
+                card.addEventListener('focusin', () => {
+                    if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null; }
+                    previewFormula(f);
+                });
+                card.addEventListener('focusout', () => {
+                    if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null; }
                 });
                 grid.appendChild(card);
             });
@@ -3333,6 +3409,8 @@
             get genMode() { return state.genMode; },
             get audioState() { return audio.ctx && audio.ctx.state; },
             get hasCanvas() { return !!mainCanvas; },
+            get previewActive() { return !!previewActive; },
+            get previewFreq() { return previewActive ? previewActive.osc.frequency.value : null; },
             get fftBinMax() {
                 let m = 0;
                 for (let i = 0; i < state.fftData.length; i++) if (state.fftData[i] > m) m = state.fftData[i];
