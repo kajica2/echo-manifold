@@ -856,6 +856,36 @@
             color: #f87171; padding: 4px 10px;
         }
 
+        /* ---- Export panel ---- */
+        .export-pills { display: flex; gap: 8px; margin: 12px 0 18px; }
+        .export-pill {
+            font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em;
+            padding: 9px 16px; border-radius: 999px;
+            border: 1px solid var(--ctl-border); background: var(--ctl-bg); color: var(--text-dim);
+            cursor: pointer;
+            transition: color 0.2s, border-color 0.2s, background 0.2s;
+        }
+        .export-pill:hover { color: var(--text); border-color: var(--ctl-border-hover); }
+        .export-pill[aria-checked="true"] {
+            color: var(--cyan);
+            border-color: rgba(0,217,255,0.55);
+            background: rgba(0,217,255,0.1);
+        }
+        .export-pill:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+        .export-status {
+            font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
+            color: var(--text-dim); margin: 12px 0 14px; min-height: 14px;
+        }
+        .export-status.warn { color: #facc15; }
+        .export-status.ok { color: #4ade80; }
+        .export-status.rec { color: var(--cyan); }
+        .export-progress {
+            height: 2px; background: var(--track-bg); border-radius: 2px;
+            margin: 8px 0 14px; overflow: hidden; display: none;
+        }
+        .export-progress.show { display: block; }
+        .export-progress-bar { height: 100%; background: var(--cyan); width: 0%; transition: width 0.1s linear; box-shadow: 0 0 8px var(--cyan); }
+
         /* ---- Toast ---- */
         .toast {
             position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom));
@@ -993,6 +1023,7 @@
             <div class="sheet-tabs" role="tablist" aria-label="Info sections">
                 <button class="sheet-tab" role="tab" data-tab="about" id="tab-about" aria-selected="true" aria-controls="pane-about">About</button>
                 <button class="sheet-tab" role="tab" data-tab="presets" id="tab-presets" aria-selected="false" aria-controls="pane-presets" tabindex="-1">Presets</button>
+                <button class="sheet-tab" role="tab" data-tab="export" id="tab-export" aria-selected="false" aria-controls="pane-export" tabindex="-1">Export</button>
             </div>
             <div class="sheet-body">
                 <div class="sheet-pane" id="pane-about" data-pane="about" role="tabpanel" aria-labelledby="tab-about">
@@ -1020,6 +1051,18 @@
                         <button id="preset-save-btn" class="ibtn-mini accent" type="button">Save</button>
                     </div>
                     <div id="preset-pane-body"></div>
+                </div>
+                <div class="sheet-pane" id="pane-export" data-pane="export" role="tabpanel" aria-labelledby="tab-export" hidden>
+                    <p class="sheet-p">Record the live output and download as a 44.1 kHz 16-bit stereo WAV file. Engage the engine before recording.</p>
+                    <div class="preset-section-head" style="margin-top: 18px;">Length</div>
+                    <div class="export-pills" role="radiogroup" aria-label="Recording length">
+                        <button class="export-pill" type="button" role="radio" data-length="15" aria-checked="false">15s</button>
+                        <button class="export-pill" type="button" role="radio" data-length="30" aria-checked="true">30s</button>
+                        <button class="export-pill" type="button" role="radio" data-length="60" aria-checked="false">60s</button>
+                    </div>
+                    <div class="export-status" id="export-status"></div>
+                    <div class="export-progress" id="export-progress"><div class="export-progress-bar" id="export-progress-bar"></div></div>
+                    <button id="export-btn" class="ibtn-mini accent" type="button">Record &amp; Download</button>
                 </div>
             </div>
         </div>
@@ -2784,6 +2827,213 @@
             // Reset to About when modal opens
             const origInfo = document.getElementById('info-btn').onclick;
             document.getElementById('info-btn').addEventListener('click', () => { activateTab('about'); renderPresetPane(); }, true);
+        })();
+
+/* ---- WAV encoder (44.1 kHz / 16-bit / stereo) ---- */
+        function encodeWAV(audioBuffer) {
+            const numChannels = audioBuffer.numberOfChannels;
+            const sampleRate = audioBuffer.sampleRate;
+            const numFrames = audioBuffer.length;
+            const bytesPerSample = 2;
+            const blockAlign = numChannels * bytesPerSample;
+            const byteRate = sampleRate * blockAlign;
+            const dataSize = numFrames * blockAlign;
+            const bufferSize = 44 + dataSize;
+            const buffer = new ArrayBuffer(bufferSize);
+            const view = new DataView(buffer);
+
+            const writeStr = (offset, str) => { for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i)); };
+            writeStr(0, 'RIFF');
+            view.setUint32(4, bufferSize - 8, true);
+            writeStr(8, 'WAVE');
+            writeStr(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, byteRate, true);
+            view.setUint16(32, blockAlign, true);
+            view.setUint16(34, 16, true);
+            writeStr(36, 'data');
+            view.setUint32(40, dataSize, true);
+
+            const channels = [];
+            for (let c = 0; c < numChannels; c++) channels.push(audioBuffer.getChannelData(c));
+            let offset = 44;
+            for (let i = 0; i < numFrames; i++) {
+                for (let c = 0; c < numChannels; c++) {
+                    let sample = channels[c][i];
+                    sample = Math.max(-1, Math.min(1, sample));
+                    view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+                    offset += 2;
+                }
+            }
+            return new Blob([buffer], { type: 'audio/wav' });
+        }
+
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 4000);
+        }
+
+        /* ---- WAV export ---- */
+        let exportRecorder = null;
+        let exportChunks = [];
+        let exportLength = 30;
+        let exportTimer = null;
+        let exportStartedAt = 0;
+        let exportCancelled = false;
+
+        function setExportLength(seconds) {
+            exportLength = seconds;
+            document.querySelectorAll('.export-pill').forEach(p => {
+                const match = Number(p.dataset.length) === seconds;
+                p.setAttribute('aria-checked', String(match));
+            });
+        }
+
+        function setExportStatus(msg, cls) {
+            const el = document.getElementById('export-status');
+            if (!el) return;
+            el.textContent = msg;
+            el.classList.remove('warn', 'ok', 'rec');
+            if (cls) el.classList.add(cls);
+        }
+
+        function setExportProgress(pct, show) {
+            const wrap = document.getElementById('export-progress');
+            const bar = document.getElementById('export-progress-bar');
+            if (!wrap || !bar) return;
+            if (show === false) { wrap.classList.remove('show'); bar.style.width = '0%'; return; }
+            wrap.classList.add('show');
+            bar.style.width = Math.max(0, Math.min(100, pct * 100)) + '%';
+        }
+
+        async function startExport() {
+            if (exportRecorder) return; // already recording
+
+            if (!audio.ctx || !audio.master) {
+                setExportStatus('Audio context not ready — open the app and engage first', 'warn');
+                return;
+            }
+            if (!state.isPlaying) {
+                setExportStatus('Engine is silent — press ENGAGE, then try again', 'warn');
+                return;
+            }
+
+            let dest;
+            try {
+                dest = audio.ctx.createMediaStreamDestination();
+                audio.master.connect(dest);
+            } catch (e) {
+                setExportStatus('Media capture not supported in this browser', 'warn');
+                return;
+            }
+
+            const mimeCandidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'];
+            const mimeType = mimeCandidates.find(m => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) || '';
+
+            try {
+                exportRecorder = new MediaRecorder(dest.stream, mimeType ? { mimeType } : undefined);
+            } catch (e) {
+                audio.master.disconnect(dest);
+                setExportStatus('MediaRecorder not supported', 'warn');
+                return;
+            }
+
+            exportChunks = [];
+            exportRecorder.ondataavailable = (ev) => { if (ev.data && ev.data.size > 0) exportChunks.push(ev.data); };
+            exportRecorder.onerror = (ev) => {
+                cancelExport();
+                setExportStatus('Recording error: ' + (ev.error && ev.error.name || 'unknown'), 'warn');
+            };
+
+            const exportBtn = document.getElementById('export-btn');
+            exportRecorder.onstop = async () => {
+                clearInterval(exportTimer);
+                exportTimer = null;
+                setExportProgress(1, true);
+                const wasCancelled = exportCancelled;
+                exportCancelled = false;
+                const blobType = exportRecorder.mimeType || mimeType || 'audio/webm';
+                const blob = new Blob(exportChunks, { type: blobType });
+                exportChunks = [];
+                try { audio.master.disconnect(dest); } catch (e) {}
+                exportRecorder = null;
+                if (wasCancelled) {
+                    setExportStatus('Cancelled', 'warn');
+                    if (exportBtn) { exportBtn.textContent = 'Record & Download'; exportBtn.disabled = false; }
+                    setTimeout(() => setExportProgress(0, false), 400);
+                    return;
+                }
+                setExportStatus('Encoding…', 'rec');
+                try {
+                    const arrayBuf = await blob.arrayBuffer();
+                    const decodeCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const audioBuf = await decodeCtx.decodeAudioData(arrayBuf.slice(0));
+                    decodeCtx.close().catch(() => {});
+                    const wav = encodeWAV(audioBuf);
+                    const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+                    const fname = `echo-${(state.active && state.active.id) || 'silent'}-${exportLength}s-${stamp}.wav`;
+                    downloadBlob(wav, fname);
+                    setExportStatus(`Exported · ${audioBuf.duration.toFixed(1)}s · ${(wav.size/1024).toFixed(0)} KB`, 'ok');
+                    if (exportBtn) { exportBtn.textContent = 'Record & Download'; exportBtn.disabled = false; }
+                    setTimeout(() => setExportProgress(0, false), 600);
+                    showToast('Exported · ' + fname);
+                } catch (err) {
+                    setExportStatus('Encode failed: ' + (err.message || err), 'warn');
+                    if (exportBtn) { exportBtn.textContent = 'Record & Download'; exportBtn.disabled = false; }
+                    setTimeout(() => setExportProgress(0, false), 600);
+                }
+            };
+
+            try { exportRecorder.start(); } catch (e) {
+                audio.master.disconnect(dest);
+                exportRecorder = null;
+                setExportStatus('Failed to start recording', 'warn');
+                return;
+            }
+
+            exportStartedAt = performance.now();
+            if (exportBtn) { exportBtn.textContent = 'Cancel'; exportBtn.disabled = false; }
+            setExportStatus(`Recording 0s / ${exportLength}s…`, 'rec');
+            setExportProgress(0, true);
+
+            exportTimer = setInterval(() => {
+                const elapsed = (performance.now() - exportStartedAt) / 1000;
+                setExportStatus(`Recording ${elapsed.toFixed(1)}s / ${exportLength}s…`, 'rec');
+                setExportProgress(elapsed / exportLength, true);
+            }, 100);
+
+            setTimeout(() => {
+                if (exportRecorder && exportRecorder.state === 'recording') exportRecorder.stop();
+            }, exportLength * 1000 + 50);
+        }
+
+        function cancelExport() {
+            if (!exportRecorder) return;
+            clearInterval(exportTimer); exportTimer = null;
+            exportCancelled = true;
+            try { exportRecorder.stop(); } catch (e) {}
+        }
+
+        (function wireExport() {
+            document.querySelectorAll('.export-pill').forEach(p => {
+                p.addEventListener('click', () => setExportLength(Number(p.dataset.length)));
+            });
+            const exportBtn = document.getElementById('export-btn');
+            if (exportBtn) {
+                exportBtn.addEventListener('click', () => {
+                    if (exportRecorder) cancelExport();
+                    else startExport();
+                });
+            }
         })();
 
         let lastFocus = null;
