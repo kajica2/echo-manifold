@@ -1192,6 +1192,41 @@
             isCF: false
         };
 
+        /* ---- Persistence ---- */
+        const STORAGE_KEY = 'echo-state';
+        const STATE_VERSION = 1;
+        let saveStateTimer = null;
+        function snapshotState() {
+            return {
+                v: STATE_VERSION,
+                t: Date.now(),
+                currentSec: state.currentSec,
+                activeId: state.active ? state.active.id : null,
+                genMode: state.genMode,
+                tuning: state.tuning,
+                volume: state.volume,
+                temperature: state.temperature,
+                polarity: state.polarity,
+                resonance: state.resonance,
+                density: state.density
+            };
+        }
+        function saveState() {
+            if (saveStateTimer) clearTimeout(saveStateTimer);
+            saveStateTimer = setTimeout(() => {
+                saveStateTimer = null;
+                try { localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshotState())); } catch (e) { /* quota / private mode */ }
+            }, 280);
+        }
+        function flushState() {
+            if (saveStateTimer) {
+                clearTimeout(saveStateTimer);
+                saveStateTimer = null;
+                try { localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshotState())); } catch (e) {}
+            }
+        }
+        window.addEventListener('beforeunload', flushState);
+
         const allFormulas = Object.entries(SECTIONS).reduce((acc, [secKey, sec]) => {
             return [...acc, ...sec.formulas.map(f => ({ ...f, section: secKey }))];
         }, []);
@@ -2100,7 +2135,7 @@
                 }
 
                 b.innerHTML = `<span class="nav-ico">${sec.icon}</span><span class="nav-chip-label">${sec.title}</span>`;
-                b.onclick = () => { state.currentSec = key; buildUI(); };
+                b.onclick = () => { state.currentSec = key; buildUI(); saveState(); };
                 nav.appendChild(b);
             });
 
@@ -2193,6 +2228,7 @@
 
             audio.play(f);
             buildUI();
+            saveState();
         }
 
         function cycleFormula(dir) {
@@ -2219,6 +2255,7 @@
             document.getElementById('viz-title').textContent = "Field Nullified";
             document.getElementById('viz-formula').textContent = "λ = select_node";
             buildUI();
+            saveState();
         };
 
         document.getElementById('prev-btn').onclick = (e) => {
@@ -2240,6 +2277,7 @@
                     state[key] = this.value / 100;
                     this.style.setProperty('--fill', this.value + '%');
                     audio.sync();
+                    saveState();
                 };
             });
         }
@@ -2261,6 +2299,7 @@
                     const m = document.getElementById('vol-label-m');
                     if (h) h.textContent = this.value + '%';
                     if (m) m.textContent = this.value + '%';
+                    saveState();
                 };
             });
         }
@@ -2271,11 +2310,13 @@
             state.tuning += 1;
             tuneDisplay.textContent = (state.tuning > 0 ? '+' : '') + state.tuning;
             audio.sync();
+            saveState();
         };
         document.getElementById('tune-down').onclick = () => {
             state.tuning -= 1;
             tuneDisplay.textContent = (state.tuning > 0 ? '+' : '') + state.tuning;
             audio.sync();
+            saveState();
         };
 
         /* ---- Responsive relocation: tune lives in the island on md+, in the studio dock below ---- */
@@ -2366,6 +2407,7 @@
 
             state.genMode = genModes[nextIdx];
             updateGenBtnUI();
+            saveState();
 
             if (state.isPlaying) {
                 audio.setGenMode(state.genMode);
@@ -2460,6 +2502,65 @@
                     break;
             }
         });
+
+        /* ---- Restore from storage on startup ---- */
+        (function hydrateFromStorage() {
+            let blob = null;
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return;
+                const parsed = JSON.parse(raw);
+                if (!parsed || parsed.v !== STATE_VERSION) return;
+                blob = parsed;
+            } catch (e) { return; }
+
+            const clamp01 = (n) => Math.max(0, Math.min(1, n));
+            state.currentSec  = typeof blob.currentSec === 'string' && SECTIONS[blob.currentSec] ? blob.currentSec : 'spacetime';
+            state.genMode     = typeof blob.genMode === 'string' && ['off','eno','euclid','chaos','phi','cell'].includes(blob.genMode) ? blob.genMode : 'eno';
+            state.tuning      = Number.isFinite(blob.tuning) ? Math.round(blob.tuning) : 0;
+            state.volume      = Number.isFinite(blob.volume) ? clamp01(blob.volume) : 0.7;
+            state.temperature = Number.isFinite(blob.temperature) ? clamp01(blob.temperature) : 0.5;
+            state.polarity    = Number.isFinite(blob.polarity) ? clamp01(blob.polarity) : 0.5;
+            state.resonance   = Number.isFinite(blob.resonance) ? clamp01(blob.resonance) : 0.5;
+            state.density     = Number.isFinite(blob.density) ? clamp01(blob.density) : 0.5;
+            state.isPlaying   = false; // never auto-resume audio
+
+            const setSlider = (ids, pct) => ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) { el.value = pct; el.style.setProperty('--fill', pct + '%'); }
+            });
+            setSlider(['temp-slider', 'temp-slider-m'], Math.round(state.temperature * 100));
+            setSlider(['polar-slider', 'polar-slider-m'], Math.round(state.polarity * 100));
+            setSlider(['res-slider', 'res-slider-m'], Math.round(state.resonance * 100));
+            setSlider(['den-slider', 'den-slider-m'], Math.round(state.density * 100));
+            setSlider(['master-vol', 'master-vol-m'], Math.round(state.volume * 100));
+
+            const volPct = Math.round(state.volume * 100) + '%';
+            const volH = document.getElementById('vol-label'); if (volH) volH.textContent = volPct;
+            const volM = document.getElementById('vol-label-m'); if (volM) volM.textContent = volPct;
+
+            const tuneDisp = document.getElementById('tune-display');
+            if (tuneDisp) tuneDisp.textContent = (state.tuning > 0 ? '+' : '') + state.tuning;
+
+            updateGenBtnUI();
+
+            if (typeof blob.activeId === 'string' && blob.activeId) {
+                const f = allFormulas.find(x => x.id === blob.activeId);
+                if (f) {
+                    state.active = f;
+                    state.currentSec = f.section;
+                    const secColor = SECTIONS[state.currentSec].color;
+                    const vizF = document.getElementById('viz-formula');
+                    document.getElementById('viz-title').textContent = f.name;
+                    vizF.textContent = f.latex;
+                    vizF.style.color = secColor;
+                    vizF.style.textShadow = `0 0 10px ${secColor}40`;
+                    document.getElementById('viz-desc').textContent = f.desc;
+                }
+            }
+
+            buildUI(); // rebuilds nav chips + cards reflecting restored active/section
+        })();
 
         setTimeout(() => {
             const loading = document.getElementById('loading');
