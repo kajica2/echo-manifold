@@ -773,6 +773,107 @@
         .sheet-p { font-size: 11px; line-height: 1.75; color: var(--text-dim); margin: 0 0 18px; font-weight: 300; }
         .sheet-p strong { color: var(--text); font-weight: 500; }
 
+        /* ---- Modal tabs ---- */
+        .sheet-tabs { display: flex; gap: 6px; padding: 12px 24px 0; border-bottom: 1px solid var(--hairline); }
+        .sheet-tab {
+            font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase;
+            padding: 8px 14px; border-radius: 999px;
+            border: 1px solid var(--ctl-border); background: var(--ctl-bg);
+            color: var(--text-dim); cursor: pointer;
+            transition: color 0.25s var(--ease-out), background 0.25s var(--ease-out), border-color 0.25s var(--ease-out), transform 0.35s var(--ease-spring);
+        }
+        .sheet-tab:hover { color: var(--text); border-color: var(--ctl-border-hover); }
+        .sheet-tab[aria-selected="true"] { color: var(--cyan); border-color: rgba(0,217,255,0.45); background: rgba(0,217,255,0.06); }
+        .sheet-tab:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+        .sheet-pane[hidden] { display: none; }
+
+        /* ---- Preset panel ---- */
+        .preset-save {
+            display: flex; gap: 8px; align-items: center;
+            padding: 14px 16px; margin-bottom: 18px;
+            border: 1px solid var(--hairline); border-radius: 14px;
+            background: var(--card-bg);
+        }
+        .preset-save input {
+            flex: 1; min-width: 0;
+            font-family: var(--font-mono); font-size: 11px; color: var(--text);
+            background: transparent; border: 0; outline: none; padding: 6px 4px;
+        }
+        .preset-save input::placeholder { color: var(--text-faint); }
+        .preset-save .ibtn-mini { flex: none; }
+        .ibtn-mini {
+            display: grid; place-items: center;
+            min-width: 36px; height: 32px; padding: 0 12px;
+            border-radius: 999px;
+            background: var(--ctl-bg); border: 1px solid var(--ctl-border);
+            color: var(--text-dim); cursor: pointer;
+            font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase;
+            transition: color 0.2s, border-color 0.2s, background 0.2s;
+        }
+        .ibtn-mini:hover { color: var(--text); border-color: var(--ctl-border-hover); background: var(--ctl-bg-hover); }
+        .ibtn-mini.accent { color: var(--cyan); border-color: rgba(0,217,255,0.45); background: rgba(0,217,255,0.08); }
+        .ibtn-mini.accent:hover { background: rgba(0,217,255,0.16); }
+        .ibtn-mini:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+        .preset-section-head {
+            font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.3em; text-transform: uppercase;
+            color: var(--text-faint); margin: 14px 0 8px; display: flex; align-items: center; gap: 8px;
+        }
+        .preset-section-head::after { content: ''; flex: 1; height: 1px; background: var(--keyline); }
+        .preset-list { display: flex; flex-direction: column; gap: 2px; }
+        .preset-row {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 14px; border-radius: 12px;
+            border: 1px solid transparent;
+            transition: background 0.2s, border-color 0.2s;
+            cursor: pointer;
+        }
+        .preset-row:hover { background: var(--ctl-bg); border-color: var(--ctl-border); }
+        .preset-row .preset-meta { flex: 1; min-width: 0; }
+        .preset-row .preset-name {
+            font-family: var(--font-mono); font-size: 11px; color: var(--text); letter-spacing: 0.04em;
+            display: flex; align-items: center; gap: 8px; margin-bottom: 2px;
+        }
+        .preset-row .preset-sub {
+            font-family: var(--font-mono); font-size: 8.5px; color: var(--text-faint); letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+        .preset-badge {
+            font-family: var(--font-mono); font-size: 7px; letter-spacing: 0.24em; text-transform: uppercase;
+            color: var(--text-faint);
+            padding: 2px 8px; border-radius: 999px;
+            border: 1px solid var(--ctl-border); background: var(--ctl-bg);
+        }
+        .preset-actions { display: flex; gap: 6px; flex: none; }
+        .preset-actions .ibtn-mini { min-width: 32px; height: 32px; padding: 0; }
+        .preset-empty {
+            font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+            color: var(--text-faint); padding: 18px 14px; text-align: center;
+            border: 1px dashed var(--ctl-border); border-radius: 12px;
+        }
+        .preset-confirm {
+            font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase;
+            color: #f87171; padding: 4px 10px;
+        }
+
+        /* ---- Toast ---- */
+        .toast {
+            position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom));
+            transform: translateX(-50%) translateY(10px);
+            background: var(--surface); border: 1px solid var(--hairline);
+            border-radius: 999px;
+            padding: 11px 20px;
+            color: var(--text); font-family: var(--font-mono); font-size: 9px;
+            letter-spacing: 0.22em; text-transform: uppercase;
+            box-shadow: var(--shadow-island);
+            z-index: 5000;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s var(--ease-out), transform 0.5s var(--ease-spring);
+            white-space: nowrap;
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        html[data-theme="light"] .toast { box-shadow: var(--shadow-island); }
+
         /* ---- Keyframes ---- */
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
@@ -889,27 +990,43 @@
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </button>
             </div>
+            <div class="sheet-tabs" role="tablist" aria-label="Info sections">
+                <button class="sheet-tab" role="tab" data-tab="about" id="tab-about" aria-selected="true" aria-controls="pane-about">About</button>
+                <button class="sheet-tab" role="tab" data-tab="presets" id="tab-presets" aria-selected="false" aria-controls="pane-presets" tabindex="-1">Presets</button>
+            </div>
             <div class="sheet-body">
-                <p class="sheet-p">Welcome to the APTFS Universe. This engine uses real-time math to generate audio and visuals. It's basically a synthesizer for the laws of physics.</p>
-                <div class="sheet-bloc">
-                    <div>
-                        <h3 class="sheet-h3">Generative Modes</h3>
-                        <p class="sheet-p">
-                            <strong>Ambient (∞):</strong> Asynchronous, drifting cloud layers.<br>
-                            <strong>Euclidean (◴):</strong> Geometric polyrhythms (Bjorklund algorithm).<br>
-                            <strong>Chaos (@):</strong> Fluid melodies driven by Lorenz Attractor.<br>
-                            <strong>Phi (Φ):</strong> Recursive timing based on the Golden Ratio.<br>
-                            <strong>Cellular (▦):</strong> Evolving arpeggios using Rule 30 Automata.
-                        </p>
+                <div class="sheet-pane" id="pane-about" data-pane="about" role="tabpanel" aria-labelledby="tab-about">
+                    <p class="sheet-p">Welcome to the APTFS Universe. This engine uses real-time math to generate audio and visuals. It's basically a synthesizer for the laws of physics.</p>
+                    <div class="sheet-bloc">
+                        <div>
+                            <h3 class="sheet-h3">Generative Modes</h3>
+                            <p class="sheet-p">
+                                <strong>Ambient (∞):</strong> Asynchronous, drifting cloud layers.<br>
+                                <strong>Euclidean (◴):</strong> Geometric polyrhythms (Bjorklund algorithm).<br>
+                                <strong>Chaos (@):</strong> Fluid melodies driven by Lorenz Attractor.<br>
+                                <strong>Phi (Φ):</strong> Recursive timing based on the Golden Ratio.<br>
+                                <strong>Cellular (▦):</strong> Evolving arpeggios using Rule 30 Automata.
+                            </p>
+                        </div>
+                        <div>
+                            <h3 class="sheet-h3 warn">The Tesla Manifold</h3>
+                            <p class="sheet-p">3-6-9 Vortex, Resonance, Radiant Energy.</p>
+                        </div>
                     </div>
-                    <div>
-                        <h3 class="sheet-h3 warn">The Tesla Manifold</h3>
-                        <p class="sheet-p">3-6-9 Vortex, Resonance, Radiant Energy.</p>
+                </div>
+                <div class="sheet-pane" id="pane-presets" data-pane="presets" role="tabpanel" aria-labelledby="tab-presets" hidden>
+                    <div class="preset-save">
+                        <input type="text" id="preset-name-input" placeholder="Name this preset" maxlength="40" aria-label="Preset name" class="mono">
+                        <button id="preset-save-btn" class="ibtn-mini accent" type="button">Save</button>
                     </div>
+                    <div id="preset-pane-body"></div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <!-- Floating island header (detached control deck) -->
     <header class="island">
@@ -1219,11 +1336,8 @@
             }, 280);
         }
         function flushState() {
-            if (saveStateTimer) {
-                clearTimeout(saveStateTimer);
-                saveStateTimer = null;
-                try { localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshotState())); } catch (e) {}
-            }
+            if (saveStateTimer) { clearTimeout(saveStateTimer); saveStateTimer = null; }
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshotState())); } catch (e) {}
         }
         window.addEventListener('beforeunload', flushState);
 
@@ -2423,6 +2537,255 @@
             }
         };
 
+/* ---- Toast ---- */
+        let toastTimer = null;
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            if (!t) return;
+            t.textContent = msg;
+            t.classList.add('show');
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+        }
+
+        /* ---- Presets ---- */
+        const PRESET_STORAGE_KEY = 'echo-presets';
+        const PRESET_VERSION = 1;
+
+        // Built-in presets ship with the app — immutable, always available
+        const BUILT_IN_PRESETS = [
+            {
+                id: 'bi-singularity',
+                name: 'Genesis Drift',
+                sub: 'Singularity · Ambient',
+                state: { v: STATE_VERSION, currentSec: 'spacetime', activeId: 'd0', genMode: 'eno', tuning: 0, volume: 0.7, temperature: 0.5, polarity: 0.5, resonance: 0.55, density: 0.45 }
+            },
+            {
+                id: 'bi-tesla-pulse',
+                name: 'Tesla Pulse',
+                sub: 'Vortex 3-6-9 · Euclidean',
+                state: { v: STATE_VERSION, currentSec: 'tesla', activeId: 'v369', genMode: 'euclid', tuning: 0, volume: 0.65, temperature: 0.62, polarity: 0.55, resonance: 0.6, density: 0.5 }
+            },
+            {
+                id: 'bi-butterfly',
+                name: 'Butterfly Bloom',
+                sub: 'Chaos · Lorenz',
+                state: { v: STATE_VERSION, currentSec: 'flux', activeId: 'ch', genMode: 'chaos', tuning: 0, volume: 0.7, temperature: 0.7, polarity: 0.5, resonance: 0.55, density: 0.45 }
+            },
+            {
+                id: 'bi-phi-spiral',
+                name: 'Phi Spiral',
+                sub: 'Golden Ratio · Recursive',
+                state: { v: STATE_VERSION, currentSec: 'harmonics', activeId: 'phi', genMode: 'phi', tuning: 0, volume: 0.7, temperature: 0.45, polarity: 0.55, resonance: 0.6, density: 0.55 }
+            },
+            {
+                id: 'bi-schumann',
+                name: 'Schumann Heart',
+                sub: '7.83 Hz · Earth Resonance',
+                state: { v: STATE_VERSION, currentSec: 'ecology', activeId: 'sch', genMode: 'off', tuning: 0, volume: 0.55, temperature: 0.4, polarity: 0.5, resonance: 0.7, density: 0.35 }
+            }
+        ];
+
+        function loadPresetLibrary() {
+            try {
+                const raw = localStorage.getItem(PRESET_STORAGE_KEY);
+                if (!raw) return [];
+                const parsed = JSON.parse(raw);
+                if (!parsed || parsed.v !== PRESET_VERSION || !Array.isArray(parsed.list)) return [];
+                return parsed.list.filter(p => p && p.id && p.name && p.state);
+            } catch (e) { return []; }
+        }
+
+        function savePresetLibrary(list) {
+            try {
+                localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify({ v: PRESET_VERSION, list }));
+            } catch (e) {}
+        }
+
+        function encodeStateToUrl(state) {
+            try { return btoa(JSON.stringify(state)); } catch (e) { return null; }
+        }
+
+        function presetSub(state) {
+            const f = state.activeId ? allFormulas.find(x => x.id === state.activeId) : null;
+            const name = f ? f.name : 'No formula';
+            const modeNames = { off: 'Silent', eno: 'Ambient', euclid: 'Euclidean', chaos: 'Chaos', phi: 'Phi', cell: 'Cellular' };
+            return `${name} · ${modeNames[state.genMode] || 'Ambient'}`;
+        }
+
+        function renderPresetPane() {
+            const body = document.getElementById('preset-pane-body');
+            if (!body) return;
+            const userPresets = loadPresetLibrary();
+
+            let html = '';
+
+            html += `<div class="preset-section-head">Built-In</div>`;
+            html += `<div class="preset-list">`;
+            BUILT_IN_PRESETS.forEach(p => {
+                html += `<div class="preset-row" role="button" tabindex="0" data-preset-action="load" data-preset-source="builtin" data-preset-id="${p.id}" aria-label="Load ${p.name}">
+                    <div class="preset-meta">
+                        <div class="preset-name">${p.name} <span class="preset-badge">Built-In</span></div>
+                        <div class="preset-sub">${p.sub}</div>
+                    </div>
+                    <div class="preset-actions">
+                        <button class="ibtn-mini" type="button" data-preset-action="share" data-preset-source="builtin" data-preset-id="${p.id}" aria-label="Copy share link" title="Copy share link">↗</button>
+                    </div>
+                </div>`;
+            });
+            html += `</div>`;
+
+            html += `<div class="preset-section-head">Your Presets</div>`;
+            if (userPresets.length === 0) {
+                html += `<div class="preset-empty">No saved presets yet. Save your current state above.</div>`;
+            } else {
+                html += `<div class="preset-list">`;
+                userPresets.forEach(p => {
+                    const sub = presetSub(p.state);
+                    html += `<div class="preset-row" data-preset-action="load" data-preset-source="user" data-preset-id="${p.id}" role="button" tabindex="0" aria-label="Load ${p.name}">
+                        <div class="preset-meta">
+                            <div class="preset-name">${p.name}</div>
+                            <div class="preset-sub">${sub}</div>
+                        </div>
+                        <div class="preset-actions">
+                            <button class="ibtn-mini" type="button" data-preset-action="share" data-preset-source="user" data-preset-id="${p.id}" aria-label="Copy share link" title="Copy share link">↗</button>
+                            <button class="ibtn-mini" type="button" data-preset-action="delete" data-preset-source="user" data-preset-id="${p.id}" aria-label="Delete preset" title="Delete">✕</button>
+                        </div>
+                    </div>`;
+                });
+                html += `</div>`;
+            }
+
+            body.innerHTML = html;
+        }
+
+        function getPresetById(id, source) {
+            if (source === 'builtin') return BUILT_IN_PRESETS.find(p => p.id === id);
+            const userPresets = loadPresetLibrary();
+            return userPresets.find(p => p.id === id);
+        }
+
+        function loadPresetById(id, source) {
+            const preset = getPresetById(id, source);
+            if (!preset) return;
+            applyStateBlob(preset.state);
+            flushState();
+            showToast('Loaded · ' + preset.name);
+            // Close the modal so user sees the result
+            const modal = document.getElementById('info-modal');
+            if (modal && !modal.classList.contains('modal-closed')) closeModal();
+        }
+
+        function sharePresetById(id, source) {
+            const preset = getPresetById(id, source);
+            if (!preset) return;
+            const encoded = encodeStateToUrl(preset.state);
+            if (!encoded) return;
+            const url = `${location.origin}${location.pathname}?p=${encoded}`;
+            const copy = (text) => {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    return navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+                }
+                return fallbackCopy(text);
+            };
+            const fallbackCopy = (text) => {
+                const ta = document.createElement('textarea');
+                ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                document.body.appendChild(ta); ta.select();
+                try { document.execCommand('copy'); } catch (e) {}
+                ta.remove();
+            };
+            copy(url).then(() => showToast('Link copied · ' + preset.name)).catch(() => showToast('Copy failed'));
+        }
+
+        function deletePresetById(id) {
+            const list = loadPresetLibrary().filter(p => p.id !== id);
+            savePresetLibrary(list);
+            renderPresetPane();
+            showToast('Preset deleted');
+        }
+
+        function saveCurrentAsPreset(name) {
+            const trimmed = (name || '').trim();
+            const finalName = trimmed || `Preset ${loadPresetLibrary().length + 1}`;
+            const list = loadPresetLibrary();
+            const newPreset = {
+                id: 'usr_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+                name: finalName.slice(0, 40),
+                createdAt: Date.now(),
+                state: snapshotState()
+            };
+            list.unshift(newPreset);
+            savePresetLibrary(list);
+            renderPresetPane();
+            showToast('Saved · ' + newPreset.name);
+        }
+
+        /* ---- Preset pane: event delegation ---- */
+        (function wirePresetPane() {
+            const body = document.getElementById('preset-pane-body');
+            if (!body) return;
+            const onAction = (e, row) => {
+                const actionEl = e.target.closest('[data-preset-action]');
+                const id = (actionEl || row).getAttribute('data-preset-id');
+                const source = (actionEl || row).getAttribute('data-preset-source');
+                const action = (actionEl || row).getAttribute('data-preset-action');
+                if (!action || !id || !source) return;
+                if (action === 'load') loadPresetById(id, source);
+                else if (action === 'share') { e.stopPropagation(); sharePresetById(id, source); }
+                else if (action === 'delete') { e.stopPropagation(); deletePresetById(id); }
+            };
+            body.addEventListener('click', (e) => onAction(e, e.target.closest('.preset-row')));
+            body.addEventListener('keydown', (e) => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                const row = e.target.closest('.preset-row');
+                if (!row) return;
+                e.preventDefault();
+                loadPresetById(row.getAttribute('data-preset-id'), row.getAttribute('data-preset-source'));
+            });
+
+            const saveBtn = document.getElementById('preset-save-btn');
+            const nameInput = document.getElementById('preset-name-input');
+            if (saveBtn) saveBtn.addEventListener('click', () => {
+                const name = nameInput ? nameInput.value : '';
+                saveCurrentAsPreset(name);
+                if (nameInput) nameInput.value = '';
+            });
+            if (nameInput) nameInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); saveBtn && saveBtn.click(); }
+            });
+        })();
+
+        /* ---- Modal tabs ---- */
+        (function wireTabs() {
+            const tabs = document.querySelectorAll('.sheet-tab');
+            const panes = document.querySelectorAll('.sheet-pane');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => activateTab(tab.dataset.tab));
+                tab.addEventListener('keydown', (e) => {
+                    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+                    e.preventDefault();
+                    const arr = Array.from(tabs);
+                    const idx = arr.indexOf(tab);
+                    const next = e.key === 'ArrowRight' ? arr[(idx + 1) % arr.length] : arr[(idx - 1 + arr.length) % arr.length];
+                    next.focus();
+                    activateTab(next.dataset.tab);
+                });
+            });
+            function activateTab(name) {
+                tabs.forEach(t => {
+                    const match = t.dataset.tab === name;
+                    t.setAttribute('aria-selected', String(match));
+                    t.tabIndex = match ? 0 : -1;
+                });
+                panes.forEach(p => p.toggleAttribute('hidden', p.dataset.pane !== name));
+                if (name === 'presets') renderPresetPane();
+            }
+            // Reset to About when modal opens
+            const origInfo = document.getElementById('info-btn').onclick;
+            document.getElementById('info-btn').addEventListener('click', () => { activateTab('about'); renderPresetPane(); }, true);
+        })();
+
         let lastFocus = null;
         const modal = document.getElementById('info-modal');
         const infoBtn = document.getElementById('info-btn');
@@ -2503,16 +2866,9 @@
             }
         });
 
-        /* ---- Restore from storage on startup ---- */
-        (function hydrateFromStorage() {
-            let blob = null;
-            try {
-                const raw = localStorage.getItem(STORAGE_KEY);
-                if (!raw) return;
-                const parsed = JSON.parse(raw);
-                if (!parsed || parsed.v !== STATE_VERSION) return;
-                blob = parsed;
-            } catch (e) { return; }
+        /* ---- Apply a state blob to UI + DOM (visual only; no audio) ---- */
+        function applyStateBlob(blob) {
+            if (!blob || blob.v !== STATE_VERSION) return;
 
             const clamp01 = (n) => Math.max(0, Math.min(1, n));
             state.currentSec  = typeof blob.currentSec === 'string' && SECTIONS[blob.currentSec] ? blob.currentSec : 'spacetime';
@@ -2542,7 +2898,7 @@
             const tuneDisp = document.getElementById('tune-display');
             if (tuneDisp) tuneDisp.textContent = (state.tuning > 0 ? '+' : '') + state.tuning;
 
-            updateGenBtnUI();
+            if (typeof updateGenBtnUI === 'function') updateGenBtnUI();
 
             if (typeof blob.activeId === 'string' && blob.activeId) {
                 const f = allFormulas.find(x => x.id === blob.activeId);
@@ -2560,6 +2916,46 @@
             }
 
             buildUI(); // rebuilds nav chips + cards reflecting restored active/section
+        }
+
+        /* ---- Load initial state: URL > localStorage ---- */
+        (function loadInitialState() {
+            const params = new URLSearchParams(location.search);
+            let blob = null;
+            let fromUrl = false;
+
+            const p = params.get('p');
+            if (p) {
+                try {
+                    const decoded = JSON.parse(atob(p));
+                    if (decoded && decoded.v === STATE_VERSION) {
+                        blob = decoded;
+                        fromUrl = true;
+                    }
+                } catch (e) {}
+            }
+
+            if (!blob) {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    if (raw) {
+                        const parsed = JSON.parse(raw);
+                        if (parsed && parsed.v === STATE_VERSION) blob = parsed;
+                    }
+                } catch (e) {}
+            }
+
+            if (!blob) return;
+            applyStateBlob(blob);
+
+            if (fromUrl) {
+                flushState(); // adopt shared state as new local baseline
+                try {
+                    const clean = location.pathname + (location.hash || '');
+                    history.replaceState(null, '', clean);
+                } catch (e) {}
+                setTimeout(() => showToast('Loaded preset from link'), 240);
+            }
         })();
 
         setTimeout(() => {
